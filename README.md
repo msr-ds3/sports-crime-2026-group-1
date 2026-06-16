@@ -41,3 +41,5 @@ This week covers replications and extensions of [this paper](https://jvlone.com/
     * https://github.com/msr-ds3/sports-crime-2026-group-6
 
 7. Write one Rmarkdown notebook file that contains all of your results, including the replications and your extensions. Commit the source code and rendered notebook to your group's Github repository, with a README that explains what each file does.
+
+Test to be contributor: Jacqueline 
