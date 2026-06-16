@@ -1,0 +1,22 @@
+---
+title: "Team Agency Mapping"
+author: "Jacquline and Farida"
+date: "`r Sys.Date()`"
+output: html_document
+---
+```{r load}
+library(readr)  
+library(here)
+install.packages("cfbfastR")
+library(cfbfastR)
+
+schedule_data <- cfbfastR::cfbd_schedule(year=2023)
+crim_data<- read_csv('nibrs_offense_segment_2000_2005.csv')
+batch_data <- read_csv('nibrs_batch_header_1991_2024.csv')
+
+
+```
+```{r}
+install.packages("cfbfastR")
+
+```
