@@ -6,3 +6,5 @@
 # nibrs_offense_segment_<year>.csv
 # Link where data was retrieved: https://www.openicpsr.org/openicpsr/project/118281/version/V11/view?path=/openicpsr/118281/fcr:versions/V11/batch_header_csv_1991_2024.zip&type=file 
 
+unzip batch_header_csv_1991_2024.zip
+grep -e "^[^,]*,200[0-5]," nibrs_batch_header_1991_2024.csv > oribatch_header_2000_2005.csv
