@@ -28,6 +28,9 @@ inner_join(school_schedule, by= "home_team_location")
 
 a_offenses_per_ori <- a_offenses_per_ori %>% rename(date = incident_date )
 
-a_offenses_per_ori %>% left_join( schedules_extended, by = c("city_name", "date"))
+data <- a_offenses_per_ori %>% left_join( schedules_extended, by = c("city_name", "date"))
 
+#daily counts per agency 
+#have to repipe schedules for 2000 to 2005 data specifically 
+data %>% group_by(date,city_name )  %>% summarize (count = n())
 
