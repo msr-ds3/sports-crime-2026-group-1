@@ -27,6 +27,7 @@ grade_a_offenses <-filter(test_crime_data,
 ) %>% 
 select(ori, ucr_offense_code, incident_date)
 
-a_offenses_per_ori <- inner_join(ori_per_school, grade_a_offenses, by = "ori") %>% 
-    mutate(a_offenses_per_ori, offense_type = ifelse(ucr_offense_code == "destruction/damage/vandalism of property", "vandalism", "assault")) %>%
+a_offenses_per_ori <- inner_join(ori_per_school, grade_a_offenses, by = "ori") %>%
+    mutate(offense_type = ifelse(ucr_offense_code == "destruction/damage/vandalism of property", "vandalism", "assault")) %>%
+    filter(year(incident_date) >= 2000 & year(incident_date) <= 2005) %>%
     select(ori, school, offense_type, city_name, state, incident_date) 
