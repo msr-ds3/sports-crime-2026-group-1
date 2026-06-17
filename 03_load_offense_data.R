@@ -4,7 +4,7 @@ library(readr)
 ## Create table joining city_name, school, state and OIR
 batch_data <- read_csv("ori_batch_header.csv",
     col_names = c('ori','year','state','population','date_ori_was_added','date_ori_went_nibrs','city_name','state_abbreviation','population_group','country_division','country_region','agency_indicator','core_city'))
-batch_data <- select(batch_data, ori, year, state, population, city_name)
+batch_data <- select(batch_data, ori, year, state, population, city_name, agency_indicator)
 
 school_info_tb <- tibble(
     city_name = c("fayetteville","jonesboro","colorado springs","boise","moscow","ames","iowa city","lawrence","ann arbor","east lansing","kalamazoo","mount pleasant","akron","athens","columbus","clemson","columbia","murfreesboro","austin","denton","lubbock","logan","provo","blacksburg","huntington","morgantown"),
@@ -13,6 +13,7 @@ school_info_tb <- tibble(
 )
 
 ori_per_school <- inner_join(school_info_tb, batch_data, by = c("city_name", "state")) %>% 
+    filter(agency_indicator == "city") %>%
     select(city_name, school, state, ori)
 
 ## Load Offense Data
@@ -27,4 +28,5 @@ grade_a_offenses <-filter(test_crime_data,
 select(ori, ucr_offense_code, incident_date)
 
 a_offenses_per_ori <- inner_join(ori_per_school, grade_a_offenses, by = "ori") %>% 
-    select(ori, school, ucr_offense_code, city_name, state, incident_date)
+    mutate(a_offenses_per_ori, offense_type = ifelse(ucr_offense_code == "destruction/damage/vandalism of property", "vandalism", "assault")) %>%
+    select(ori, school, offense_type, city_name, state, incident_date) 
