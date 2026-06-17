@@ -12,6 +12,7 @@ schedules <- map_dfr(years, function(yr){
 })
 
 school_schedule <- tibble(
+    ori = c("AR0720100", "AR0160100", "CO0210100", "ID0010100", "ID0290500", "IA0850100", "IA0520200", "KS0230100", "MI8121800", "MI3336400", "MI3949900", "MI3759900", "OH0770100", "OH0050100", "OHCOP0000", "SC0390200", "SC0400100", "TN0750100", "TX2270100", "TX0610200", "TX1520000", "UT0030100", "UT0250600", "VA0600100", "WV0060200", "WV0310100"),
     home_team_location = c("Arkansas", "Arkansas State" ,"Air Force", "Boise State", "Idaho","Iowa State", "Iowa", "Kansas","Michigan", 
     "Michigan State","Western Michigan","Eastern Michigan","Akron", "Ohio","Ohio State","Clemson", "USC", "Middle Tennessee","Texas","North Texas","Texas Tech","Utah State","BYU","Virginia Tech","Marshall","West Virginia"),
     home_team_full = c("Arkansas Razorbacks", "Arkansas State Red Wolves", "Air Force Falcons", "Boise State Broncos", "Idaho Vandals", "Iowa State Cyclones", "Iowa Hawkeyes", "Kansas Jayhawks", 
@@ -26,22 +27,16 @@ school_schedule <- tibble(
     #state = c("arkansas", "arkansas", "colorado", "idaho", "idaho", "iowa", "iowa", "kansas", "michigan", "michigan", "michigan", "michigan", "ohio", "ohio", "ohio", "south carolina", "south carolina", "tennessee", "texas", "texas", "texas", "utah", "utah", "virginia", "west virginia", "west virginia")
 )
 
+# We grab every match up where at least the home team is one that is in our 26 agencies
 schedule_teams_by_name <- schedules %>%
     filter(home_team_full %in% school_schedule$home_team_full) %>% 
-    mutate(is_home = (home_team_full %in% school_schedule$home_team_full), date = game_date) %>%
-    select(date, matchup, home_team_location, home_team_full, away_team_location, away_team_full, is_home)
+    mutate(date = game_date) %>%
+    select(date, matchup, home_team_location, home_team_full, is_home)
 
 # Home Games
-a_offenses_per_ori <- a_offenses_per_ori %>% rename(date = incident_date)
-data <- left_join(schedule_teams_by_name, school_schedule, by = "home_team_full")
-a_offenses_per_ori
+aligning_schedule_with_agency <- left_join(schedule_teams_by_name, school_schedule, by = "home_team_full")
+all_data_including_no_game <- left_join(a_offenses_per_ori, data, by = c("ori", "date"))
+only_game_data <- inner_join(a_offenses_per_ori, data, by = c("ori", "date"))
 
-pos_cor_2 <- left_join(a_offenses_per_ori, data, by = c("date", "city_name"))
-
-possibly_correct_join <- group_by(a_offenses_per_ori, date, city_name) # %>% 
-    summarize(offense_count = n()) #%>%
-    left_join(schedule_teams_by_name, by = c("date", "home_team_full"))
-
-
-# Daily counts per agency 
+# Daily counts per agency
 data %>% group_by(date,city_name)  %>% summarize (count = n())
