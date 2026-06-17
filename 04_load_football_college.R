@@ -10,9 +10,10 @@ schedules <- map_dfr(years, function(yr){
     df$year = yr
     df
 })
+
 school_schedule <- tibble(
     home_team_location = c("Arkansas", "Arkansas State" ,"Air Force", "Boise State", "Idaho","Iowa State", "Iowa", "Kansas","Michigan", 
-    "Michigan State","Western Michigan","Eastern Michigan","Akron", "Ohio","Ohio State","Clemson", "USC", "Middle Tennessee","Texas","North Texas","Texas Tech","Utah","BYU","Virginia Tech","Marshall","West Virginia"),
+    "Michigan State","Western Michigan","Eastern Michigan","Akron", "Ohio","Ohio State","Clemson", "USC", "Middle Tennessee","Texas","North Texas","Texas Tech","Utah State","BYU","Virginia Tech","Marshall","West Virginia"),
     city_name = c("fayetteville","jonesboro","colorado springs","boise","moscow","ames","iowa city","lawrence","ann arbor","east lansing","kalamazoo","mount pleasant","akron","athens","columbus","clemson","columbia","murfreesboro","austin","denton","lubbock","logan","provo","blacksburg","huntington","morgantown"),
     school_name = c("University of Arkansas", "Arkansas State University", "United States Air Force Academy", "
     Boise State University", "The University of Idaho", "Iowa State University", "The University of Iowa", "The University of Kansas", "The University of Michigan", "Michigan State University", "Western Michigan University", "Eastern Michigan University", "The University of Akron", "Ohio University", 
@@ -21,16 +22,17 @@ school_schedule <- tibble(
     state = c("arkansas", "arkansas", "colorado", "idaho", "idaho", "iowa", "iowa", "kansas", "michigan", "michigan", "michigan", "michigan", "ohio", "ohio", "ohio", "south carolina", "south carolina", "tennessee", "texas", "texas", "texas", "utah", "utah", "virginia", "west virginia", "west virginia")
 )
 
+a_offenses_per_ori <- a_offenses_per_ori %>% rename(date = incident_date)
+
+schedule_teams <- schedules %>%
+    filter(home_team_location %in% school_schedule$home_team_location | away_team_location %in% school_schedule$home_team_location)
+
 #Crime on game days vs. non-game days
+schedules_extended <- schedules %>% rename(date = game_date) %>% 
+    inner_join(school_schedule, by = c("home_team_location"))
 
-schedules_extended <- schedules  %>% rename(date = game_date) %>% 
-inner_join(school_schedule, by= "home_team_location")
+data <- a_offenses_per_ori %>% left_join(schedules_extended, by = c("city_name", "date"))
 
-a_offenses_per_ori <- a_offenses_per_ori %>% rename(date = incident_date )
-
-data <- a_offenses_per_ori %>% left_join( schedules_extended, by = c("city_name", "date"))
-
-#daily counts per agency 
-#have to repipe schedules for 2000 to 2005 data specifically 
-data %>% group_by(date,city_name )  %>% summarize (count = n())
+# Daily counts per agency 
+data %>% group_by(date,city_name)  %>% summarize (count = n())
 
