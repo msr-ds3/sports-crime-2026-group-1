@@ -1,26 +1,98 @@
 ---
-title: "Team Agency Mapping"
+title: " Replication of College Football Games and Crime (Rees & Schnepel, 2009)"
 author: "Jacqueline and Farida"
 date: "`r Sys.Date()`"
 output: html_document
 ---
 
-```{r load}
+```{r load-packages}
+library(cfbfastR)
 library(tidyverse)
 library(readr)
 library(here)
-install.packages("cfbfastR")
-library(cfbfastR)
+library(purrr)
+library(dplyr) 
+library(httpgd)
+
+theme_set(theme_bw())
+
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Replicating core analysis
 
-```{r}
+This is a template that aims to replicate and analyze Daniel Rees and Kevin Schnepel's paper, College Football Games and Crime published in 2009 by Journal of Sports Economics. This paper (https://jvlone.com/sportsdocs/footballGamesCrime2009.pdf) examines whether college football games lead to an increase in crime in host communities. This is done by using daily offense data from 26 police agencies in college towns matched to game schedules to find the ---(finish later )
+
+## Get and clean the raw data
+
+
+Create table, school_info_tb to map the city names and ori extracted from the batch data to the school names
+```{r Create-tables}
 ## Create table joining city_name, school, state and OIR
+batch_data <- read_csv("ori_batch_header.csv")
+
+batch_data <- select(batch_data, ori, year, state, population, city_name, agency_indicator)
+
+school_info_tb <- tibble(
+    city_name = c("fayetteville","jonesboro","colorado springs","boise","moscow","ames","iowa city","lawrence","ann arbor","east lansing","kalamazoo","mount pleasant","akron","athens","columbus","clemson","columbia","murfreesboro","austin","denton","lubbock","logan","provo","blacksburg","huntington","morgantown"),
+    school = c("University of Arkansas", "Arkansas State University", "United States Air Force Academy", "Boise State University", "The University of Idaho", "Iowa State University", "The University of Iowa", "The University of Kansas", "The University of Michigan", "Michigan State University", "Western Michigan University", "Eastern Michigan University", "The University of Akron", "Ohio University", "The Ohio State University", "Clemson University", "The University of South Carolina", "Middle Tennessee State University", "The University of Texas at Austin", "The University of North Texas", "Texas Tech University", "Utah State University", "Brigham Young University", "Virginia Polytechnic Institute and State University", "Marshall University", "West Virginia University"),
+    state = c("arkansas", "arkansas", "colorado", "idaho", "idaho", "iowa", "iowa", "kansas", "michigan", "michigan", "michigan", "michigan", "ohio", "ohio", "ohio", "south carolina", "south carolina", "tennessee", "texas", "texas", "texas", "utah", "utah", "virginia", "west virginia", "west virginia")
+)
+
+ori_per_school <- inner_join(school_info_tb, batch_data, by = c("city_name", "state")) %>% 
+    filter(agency_indicator == "city") %>%
+    select(city_name, school, state, ori)
 
 ```
 
-```{r}
-## Load Offense Data
+Load Offense Data created from nibrs data joined from 2000 to 2005 
+```{r load-offense-data}
+test_crime_data <- read_csv("nibrs_offense_segment_2000_2005.csv")
+```
+Filter Offense Data to include Vandalism, aggravated assault, intimidataion and simple assault
+```{r Filter-offense-data}
+grade_a_offenses <-filter(test_crime_data, 
+    ucr_offense_code == "destruction/damage/vandalism of property" |
+    ucr_offense_code == "assault offenses - aggravated assault" |
+    ucr_offense_code == "assault offenses - intimidation" | 
+    ucr_offense_code == "assault offenses - simple assault"
+) %>% 
+select(ori, ucr_offense_code, incident_date)
+```
+Load Football Schedules from 2000-2005 from csbfastR package to get college football game schedules via ESPN 
+ 
+```{r load-schedules}
+years <- 2000:2005
+schedules <- map_dfr(years, function(yr){
+    df <- espn_cfb_schedule(year = yr )
+    df$year = yr
+    df
+})
+```
 
+Create Table to join Schedule and Offense data by (what did we join by) so  that the crime and noncrime days can be c there was an away ga
+```{r Join- schedules }
+school_schedule <- tibble(
+    home_team_location = c("Arkansas", "Arkansas State" ,"Air Force", "Boise State", "Idaho","Iowa State", "Iowa", "Kansas","Michigan", 
+    "Michigan State","Western Michigan","Eastern Michigan","Akron", "Ohio","Ohio State","Clemson", "USC", "Middle Tennessee","Texas","North Texas","Texas Tech","Utah State","BYU","Virginia Tech","Marshall","West Virginia"),
+    
+    team_full_name = c("Akron Zips", "Iowa State Cyclones", "Michigan Wolverines", "Ohio Bobcats", "Texas Longhorns", "Virginia Tech Hokies", "Boise State Broncos", "Clemson Tigers", 
+    "Air Force Falcons", "South Carolina Gamecocks", "Ohio State Buckeyes", "North Texas Mean Green", "Michigan State Spartans", "Arkansas Razorbacks", "Marshall Thundering Herd", 
+    "Iowa Hawkeyes", "Arkansas State Red Wolves", "Western Michigan Broncos", "Kansas Jayhawks", "Utah State Aggies", "Texas Tech Red Raiders", "West Virginia Mountaineers", 
+    "Idaho Vandals", "Eastern Michigan Eagles", "Middle Tennessee Blue Raiders", "BYU Cougars"), # not aligned with
+    
+    city_name = c("fayetteville","jonesboro","colorado springs","boise","moscow","ames","iowa city","lawrence","ann arbor","east lansing","kalamazoo","mount pleasant","akron","athens","columbus","clemson","columbia","murfreesboro","austin","denton","lubbock","logan","provo","blacksburg","huntington","morgantown"),
+    
+    school_name = c("University of Arkansas", "Arkansas State University", "United States Air Force Academy", "
+    Boise State University", "The University of Idaho", "Iowa State University", "The University of Iowa", "The University of Kansas", "The University of Michigan", "Michigan State University", "Western Michigan University", "Eastern Michigan University", "The University of Akron", "Ohio University", 
+    "The Ohio State University", "Clemson University", "The University of South Carolina", "Middle Tennessee State University", "The University of Texas at Austin", "The University of North Texas", "Texas Tech University", "Utah State University", 
+    "Brigham Young University", "Virginia Polytechnic Institute and State University", "Marshall University", "West Virginia University"),
+    
+    state = c("arkansas", "arkansas", "colorado", "idaho", "idaho", "iowa", "iowa", "kansas", "michigan", "michigan", "michigan", "michigan", "ohio", "ohio", "ohio", "south carolina", "south carolina", "tennessee", "texas", "texas", "texas", "utah", "utah", "virginia", "west virginia", "west virginia")
+)
+
+schedule_teams_by_name <- schedules %>%
+    filter(home_team_full %in% school_schedule$team_full_name | away_team_full %in% school_schedule$team_full_name)
+
+a_offenses_per_ori <- a_offenses_per_ori %>% rename(date = incident_date)
 ```
