@@ -19,6 +19,10 @@ school_schedule <- tibble(
     "Michigan Wolverines", "Michigan State Spartans", "Western Michigan Broncos", "Eastern Michigan Eagles", "Akron Zips", "Ohio Bobcats", "Ohio State Buckeyes", "Clemson Tigers", "South Carolina Gamecocks",
      "Middle Tennessee Blue Raiders", "Texas Longhorns", "North Texas Mean Green", "Texas Tech Red Raiders", "Utah State Aggies", "BYU Cougars", "Virginia Tech Hokies", "Marshall Thundering Herd", 
      "West Virginia Mountaineers"), 
+    away_team_full = c("Arkansas Razorbacks", "Arkansas State Red Wolves", "Air Force Falcons", "Boise State Broncos", "Idaho Vandals", "Iowa State Cyclones", "Iowa Hawkeyes", "Kansas Jayhawks", 
+    "Michigan Wolverines", "Michigan State Spartans", "Western Michigan Broncos", "Eastern Michigan Eagles", "Akron Zips", "Ohio Bobcats", "Ohio State Buckeyes", "Clemson Tigers", "South Carolina Gamecocks",
+     "Middle Tennessee Blue Raiders", "Texas Longhorns", "North Texas Mean Green", "Texas Tech Red Raiders", "Utah State Aggies", "BYU Cougars", "Virginia Tech Hokies", "Marshall Thundering Herd", 
+     "West Virginia Mountaineers"), 
     city_name = c("fayetteville","jonesboro","colorado springs","boise","moscow","ames","iowa city","lawrence","ann arbor","east lansing","kalamazoo","mount pleasant","akron","athens","columbus","clemson","columbia","murfreesboro","austin","denton","lubbock","logan","provo","blacksburg","huntington","morgantown"),
     school_name = c("University of Arkansas", "Arkansas State University", "United States Air Force Academy", "
     Boise State University", "The University of Idaho", "Iowa State University", "The University of Iowa", "The University of Kansas", "The University of Michigan", "Michigan State University", "Western Michigan University", "Eastern Michigan University", "The University of Akron", "Ohio University", 
@@ -27,16 +31,66 @@ school_schedule <- tibble(
     #state = c("arkansas", "arkansas", "colorado", "idaho", "idaho", "iowa", "iowa", "kansas", "michigan", "michigan", "michigan", "michigan", "ohio", "ohio", "ohio", "south carolina", "south carolina", "tennessee", "texas", "texas", "texas", "utah", "utah", "virginia", "west virginia", "west virginia")
 )
 
-# We grab every match up where at least the home team is one that is in our 26 agencies
-schedule_teams_by_name <- schedules %>%
-    filter(home_team_full %in% school_schedule$home_team_full) %>% 
-    mutate(date = game_date) %>%
-    select(date, matchup, home_team_location, home_team_full, is_home)
+# Each possible case of home/away games
+# Case One: home team in set & away team not in set
+# Case Two: away team in set & home team not in set
+# Case Three: home team in set & away team in set
+case <- schedules %>%
+    filter(home_team_full %in% school_schedule$home_team_full | away_team_full %in% school_schedule$home_team_full) %>% 
+    mutate(home_or_away = "home", date = game_date) %>%
+    select(date, matchup, home_team_location, home_team_full, away_team_full, away_team_location, home_or_away)
+
+case_one <- schedules %>%
+    filter(home_team_full %in% school_schedule$home_team_full & !(away_team_full %in% school_schedule$home_team_full)) %>% 
+    mutate(home_or_away = "home", date = game_date) %>%
+    select(date, matchup, home_team_location, home_team_full, away_team_full, away_team_location, home_or_away)
+
+case_two <- schedules %>%
+    filter(!(home_team_full %in% school_schedule$home_team_full) & away_team_full %in% school_schedule$home_team_full) %>% 
+    mutate(home_or_away = "away", date = game_date) %>%
+    select(date, matchup, home_team_location, home_team_full, away_team_full, away_team_location, home_or_away)
+
+case_three_home <- schedules %>%
+    filter(home_team_full %in% school_schedule$home_team_full & away_team_full %in% school_schedule$home_team_full) %>% 
+    mutate(home_or_away = "home", date = game_date) %>%
+    select(date, matchup, home_team_location, home_team_full, away_team_full, away_team_location, home_or_away) 
+
+case_three_away <- schedules %>%
+    filter(home_team_full %in% school_schedule$home_team_full & away_team_full %in% school_schedule$home_team_full) %>% 
+    mutate(home_or_away = "away", date = game_date) %>%
+    select(date, matchup, home_team_location, home_team_full, away_team_full, away_team_location, home_or_away) 
 
 # Home Games
 aligning_schedule_with_agency <- left_join(schedule_teams_by_name, school_schedule, by = "home_team_full")
 all_data_including_no_game <- left_join(a_offenses_per_ori, data, by = c("ori", "date"))
 only_game_data <- inner_join(a_offenses_per_ori, data, by = c("ori", "date"))
 
+case_game_data <- left_join(case, school_schedule, by = "home_team_full") %>%
+    inner_join(a_offenses_per_ori, by = c("ori", "date"))
+
+case_one_game_data <- left_join(case_one, school_schedule, by = "home_team_full") %>%
+    inner_join(a_offenses_per_ori, by = c("ori", "date"))
+case_three_home_game_data <- left_join(case_three_home, school_schedule, by = "home_team_full") %>%
+    inner_join(a_offenses_per_ori, by = c("ori", "date"))
+
+
+case_two_game_data <- left_join(case_two, school_schedule, by = "away_team_full") %>%
+    inner_join(a_offenses_per_ori, by = c("ori", "date"))
+
+case_three_away_game_data <- left_join(case_three_away, school_schedule, by = "away_team_full") %>%
+    inner_join(a_offenses_per_ori, by = c("ori", "date"))
+
+nrow(case_one)
+nrow(case_two)
+nrow(case_three_away)
+nrow(case_three_home)
+
+nrow(case_one_game_data)
+nrow(case_two_game_data)
+nrow(case_three_home_game_data)
+nrow(case_three_away_game_data)
+
+aligning_schedule_with_agency %>%
+    mutate(is_home == (ori == ))
 # Daily counts per agency
 data %>% group_by(date,city_name)  %>% summarize (count = n())
