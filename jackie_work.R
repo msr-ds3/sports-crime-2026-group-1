@@ -155,11 +155,7 @@ final_table <- left_join(template_table, vand_assa_count, by = c("ori", "date"))
 # Maybe filter only games between (Aug 20 to Dec 10)
 # For each team, get assault count + compute average over
 # All Days (112 days by 6 years = 672 days)
-# No Game (672 days - # of game days (home and away))
-# Home Games (# of Home Games)
-# Away Games (# of Away Games)
-games_ranged <- filter(total_games_use, (yday(date) >= 233 & yday(date) <= 345))
-offense_ranged <- filter(a_offenses_per_ori, (yday(date) >= 233 & yday(date) <= 345))
+
 
 # Table Two - done (tentative)
 # Distribution of Game Days by Day of Week
@@ -170,6 +166,8 @@ offense_ranged <- filter(a_offenses_per_ori, (yday(date) >= 233 & yday(date) <= 
 mutate(total_games_use, day_of_week = wday(date)) %>%
     group_by(day_of_week) %>%
     summarise(count = n())
+
+mutate(template_table, day_of_week)
 
 # ______________________________________________________________________
 # ______________________________________________________________________
