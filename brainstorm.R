@@ -26,39 +26,40 @@ school_schedule <- tibble(
     #state = c("arkansas", "arkansas", "colorado", "idaho", "idaho", "iowa", "iowa", "kansas", "michigan", "michigan", "michigan", "michigan", "ohio", "ohio", "ohio", "south carolina", "south carolina", "tennessee", "texas", "texas", "texas", "utah", "utah", "virginia", "west virginia", "west virginia")
 )
 
-schedule_teams_by_name <- schedules %>%
-    filter(home_team_full %in% school_schedule$home_team_full) %>% 
-    mutate(is_home = (home_team_full %in% school_schedule$home_team_full), date = game_date)%>%
-    select(date, matchup, home_team_location, home_team_full, away_team_full, is_home)
+#joined schedules with tibble 
+schedules_extended <- schedules  %>% rename(date = game_date) %>% 
+filter((home_team_location %in% school_schedule$home_team_location) | (away_team_location %in% school_schedule$home_team_location) )
 
+#home game and away games for home,away and none days 
+home_games <- schedules_extended %>% inner_join(school_schedule, by="home_team_location" ) %>% mutate(is_home=TRUE) 
+ 
 
-data <- schedule_teams_by_name %>% inner_join(school_schedule, by = "home_team_location" )
-data
+away_games <- schedules_extended %>% inner_join(school_schedule, by=c("away_team_location" = "home_team_location") ) %>%mutate(is_home=FALSE)
 
-a_offenses_per_ori <- a_offenses_per_ori %>% rename(date = incident_date)
+#join 
+all_games <- bind_rows(home_games,away_games)
 
-a_offenses_per_ori %>% left_join(data)
+a_offenses_per_ori <- a_offenses_per_ori %>% rename(date = incident_date )
 
-a_offenses_per_ori
+#conditon for duplicates to help many to many error for join 
+all_games <- all_games %>% group_by(city_name, date) %>%summarize (
+    home_game = any(is_home == TRUE), 
+    away_game = any(is_home == FALSE),
+    .groups = "drop")
 
-full_schedule <- a_offenses_per_ori %>% group_by(ori, city_name,date) %>% summarize(offense_count = n()) 
-#%>% 
-#inner_join()
-join <-full_schedule %>% left_join(data, by=c("city_name","date") )
-# pos_cor_2 <- left_join(a_offenses_per_ori, data, by = c("date", "city_name"))
+#join with offense table 
 
+join <-a_offenses_per_ori %>% left_join( all_games,by = c("city_name", "date") )
 
-join  %>% mutate(home = case_when(
-    away_team_full %in% school_schedule$home_team_full ~ 0,
-    !away_team_full %in% school_schedule$home_team_full & !is.na(away_team_full) ~ 1,
-    !away_team_full %in% school_schedule$home_team_full & is.na(away_team_full) ~ NA
-)) %>% select(away_team_full, home_team_full.x, home)
+# observations total 
+#join %>% count(home_game, away_game)
 
+#mean offense counts 
+offense_count <- join %>% mutate(game_type = case_when(home_game == TRUE ~ "home",
+home_game == FALSE ~ "away",
+is.na(home_game) ~ "none" ))%>% 
+group_by(city_name,date,home_game,away_game,game_type) %>% summarize ( offense_counts = n()) 
 
-#possibly_correct_join <- group_by(a_offenses_per_ori, date, city_name) # %>% 
- #   summarize(offense_count = n()) #%>%
-  #  left_join(schedule_teams_by_name, by = c("date", "home_team_full"))
+offense_mean <- offense_count %>% group_by(game_type)%>% summarize(mean = mean(offense_counts))
+offense_mean
 
-
-# Daily counts per agency 
-data %>% group_by(date,city_name)  %>% summarize (count = n())
