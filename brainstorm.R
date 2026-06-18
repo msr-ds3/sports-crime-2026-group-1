@@ -64,7 +64,7 @@ offense_mean <- offense_count %>% group_by(game_type)%>% summarize(mean = mean(o
 offense_mean
 
 
-#Total table
+# Total table
 
 y = 2000:2005
 

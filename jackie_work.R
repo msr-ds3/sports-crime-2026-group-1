@@ -135,7 +135,19 @@ total_offenses_use <- select(total_offenses, date, ori, ori_team, game_id, home_
 
 ## Working on Replicate core analysis
 ## Use this df
-all_game_per_day
+all_game_per_day <- filter(all_game_per_day, (yday(date) >= 233 & yday(date) <= 345))
+
+vand_assa_count <- group_by(all_game_per_day, ori, date, offense_type) %>%
+    summarize(count = n()) %>%
+    pivot_wider(names_from = offense_type, values_from = count)
+
+home_away <- select(all_game_and_oris, date, ori, home_or_away) %>% 
+    filter((yday(date) >= 233 & yday(date) <= 345))
+
+
+template_table <- table
+final_table <- left_join(template_table, vand_assa_count, by = c("ori", "date")) %>% 
+    left_join(home_away, by = c("ori", "date"))
 
 
 
@@ -164,9 +176,9 @@ mutate(total_games_use, day_of_week = wday(date)) %>%
 # debugging
 group_by(case_two_game_data, ori, date) # 381
 # repeats
-#   IA520200 2000 10 14 vs Illinois Fighting correct
 #   MI8121800 2000 09 23 vs Bowling Green correct
-#   OH0770100 2000 10 07 vs Illinois Fighting 
+#   OH0770100 2000 10 07 vs Illinois Fighting correct
+#   IA520200 2000 10 14 vs Illinois Fighting correct
 #   Removing 2000923 JamesMadisonWolverines, 20001007 BowieStateZips, 20001014 JamesMadisonHawkeyes
 add_count(case_two_game_data, ori, date) %>% arrange(desc(n)) %>% view
 
