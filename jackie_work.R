@@ -92,25 +92,25 @@ case_three_away_game_data <- left_join(case_three_away, school_schedule, by = "o
 
 # ------------------------------------------------
 # # Testing left joins
-# case_one_game_data <- left_join(case_one, school_schedule, by = "ori_team") %>%
-#     left_join(a_offenses_per_ori, by = c("ori", "date"))
-# # Case_one_game_data (all offenses on days with games by ori): 5,402
+case_one_game_data <- left_join(case_one, school_schedule, by = "ori_team")
+left_join(a_offenses_per_ori, case_one_game_data, by = c("ori", "date"))
+# Case_one_game_data (all offenses on days with games by ori): 5,402
 
-# case_two_game_data <- left_join(case_two, school_schedule, by = "ori_team") %>%
-#     filter( !((date == as.Date("2000-09-23") & matchup == "Michigan Wolverines at James Madison Dukes") |
-#         (date == as.Date("2000-10-07") & matchup == "Akron Zips at Bowie State Bulldogs") |
-#         (date == as.Date("2000-10-14") & matchup == "Iowa Hawkeyes at James Madison Dukes"))  
-#     ) %>%
-#     left_join(a_offenses_per_ori, by = c("ori", "date"))
-# # case_two_game_data (all offenses on days with games by ori by the away team): 4219
+case_two_game_data <- left_join(case_two, school_schedule, by = "ori_team") %>%
+    filter( !((date == as.Date("2000-09-23") & matchup == "Michigan Wolverines at James Madison Dukes") |
+        (date == as.Date("2000-10-07") & matchup == "Akron Zips at Bowie State Bulldogs") |
+        (date == as.Date("2000-10-14") & matchup == "Iowa Hawkeyes at James Madison Dukes"))  
+    ) %>%
+    left_join(a_offenses_per_ori, by = c("ori", "date"))
+# case_two_game_data (all offenses on days with games by ori by the away team): 4219
 
-# case_three_home_game_data <- left_join(case_three_home, school_schedule, by = "ori_team") %>%
-#     left_join(a_offenses_per_ori, by = c("ori", "date"))
-# # case_three_home_game_data (all offenses on days with games by ori for the home team): 1658
+case_three_home_game_data <- left_join(case_three_home, school_schedule, by = "ori_team") %>%
+    left_join(a_offenses_per_ori, by = c("ori", "date"))
+# case_three_home_game_data (all offenses on days with games by ori for the home team): 1658
 
-# case_three_away_game_data <- left_join(case_three_away, school_schedule, by = "ori_team") %>%
-#     left_join(a_offenses_per_ori, by = c("ori", "date"))
-# # case_three_away_game_data (all offenses on days with games by ori by the away team): 1085
+case_three_away_game_data <- left_join(case_three_away, school_schedule, by = "ori_team") %>%
+    left_join(a_offenses_per_ori, by = c("ori", "date"))
+# case_three_away_game_data (all offenses on days with games by ori by the away team): 1085
 # -------------------------------------------------------
 nrow(case_one_game_data)
 nrow(case_two_game_data)
@@ -128,7 +128,6 @@ total_offenses <- bind_rows(case_one_game_data, case_two_game_data, case_three_h
 names(total_offenses)
 total_offenses_use <- select(total_offenses, date, ori, ori_team, game_id, home_or_away, offense_type)
 
-
 ## Working on Replicate core analysis
 
 # Appendix Table One Descriptive Statistics
@@ -139,6 +138,7 @@ total_offenses_use <- select(total_offenses, date, ori, ori_team, game_id, home_
 # Home Games (# of Home Games)
 # Away Games (# of Away Games)
 games_ranged <- filter(total_games_use, (yday(date) >= 233 & yday(date) <= 345))
+offense_ranged <- filter(a_offenses_per_ori, (yday(date) >= 233 & yday(date) <= 345))
 
 group_by(total_offenses_use, ori, home_or_away, offense_type) %>%
     summarise(count = n()) %>%
@@ -157,6 +157,10 @@ filter(games_ranged, home_or_away == "away")
 mutate(total_offenses_use, day_of_week = wday(date)) %>%
     group_by(day_of_week) %>%
     summarise(count = n())
+
+mutate(offense_ranged, day_of_week = wday(date)) %>%
+    group_by(day_of_week) %>%
+    summarize(count = n())
 
 mutate(total_games_use, day_of_week = wday(date)) %>%
     group_by(day_of_week) %>%
