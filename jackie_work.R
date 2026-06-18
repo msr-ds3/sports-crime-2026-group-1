@@ -128,6 +128,9 @@ total_offenses <- bind_rows(case_one_game_data, case_two_game_data, case_three_h
 names(total_offenses)
 total_offenses_use <- select(total_offenses, date, ori, ori_team, game_id, home_or_away, offense_type)
 
+
+## Working on Replicate core analysis
+
 # Appendix Table One Descriptive Statistics
 # Maybe filter only games between (Aug 20 to Dec 10)
 # For each team, get assault count + compute average over
@@ -136,7 +139,6 @@ total_offenses_use <- select(total_offenses, date, ori, ori_team, game_id, home_
 # Home Games (# of Home Games)
 # Away Games (# of Away Games)
 games_ranged <- filter(total_games_use, (yday(date) >= 233 & yday(date) <= 345))
-
 
 group_by(total_offenses_use, ori, home_or_away, offense_type) %>%
     summarise(count = n()) %>%
