@@ -109,6 +109,7 @@ case_three_away_game_data <- left_join(case_three_away, school_schedule, by = "o
 # -------------------------------------------------------
 all_game_and_oris <- bind_rows(case_one_game_data, case_two_game_data, case_three_away_game_data, case_three_home_game_data)
 all_game_per_day <- left_join(a_offenses_per_ori, all_game_and_oris, by = c("ori", "date"))
+all_game_per_day <- filter(all_game_per_day, (yday(date) >= 233 & yday(date) <= 345))
 
 
 nrow(case_one_game_data)
@@ -152,16 +153,14 @@ offense_ranged <- filter(a_offenses_per_ori, (yday(date) >= 233 & yday(date) <= 
 # Distribution of Game Days by Day of Week
 # For the large df of all games and all offenses
 # Total games across all days
+
+# Game distribution across all days
 mutate(total_games_use, day_of_week = wday(date)) %>%
     group_by(day_of_week) %>%
     summarise(count = n())
-mutate(all_game_per_day, day_of_week = wday(date)) %>%
-    group_by(day_of_week) %>%
-    summarise(count = n())
+
 # ______________________________________________________________________
 # ______________________________________________________________________
-
-
 # debugging
 group_by(case_two_game_data, ori, date) # 381
 # repeats
