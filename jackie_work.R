@@ -68,6 +68,7 @@ nrow(case_two) # 381 (after removing wrong data) - 3 wrong -- filtered out below
 nrow(case_three_home) # 129 (after removing wrong data) 1 wrong -- filtered out below
 nrow(case_three_away) # 130 
 # total games: 1100 
+
 # At this point, we have four dataframes, each with their unique game matches
 
 case_one_game_data <- left_join(case_one, school_schedule, by = "ori_team") %>%
@@ -91,28 +92,20 @@ case_three_away_game_data <- left_join(case_three_away, school_schedule, by = "o
 # case_three_away_game_data (all offenses on days with games by ori by the away team): 1085
 
 # ------------------------------------------------
-# # Testing left joins
+## Testing left joins (RUN THIS SET)
+## HELLO RUN THIS
 case_one_game_data <- left_join(case_one, school_schedule, by = "ori_team")
-case_one_gameoff_data <- left_join(a_offenses_per_ori, case_one_game_data, by = c("ori", "date"))
-# Case_one_game_data (all offenses on days with games by ori): 5,402
 
 case_two_game_data <- left_join(case_two, school_schedule, by = "ori_team") %>%
     filter( !((date == as.Date("2000-09-23") & matchup == "Michigan Wolverines at James Madison Dukes") |
         (date == as.Date("2000-10-07") & matchup == "Akron Zips at Bowie State Bulldogs") |
         (date == as.Date("2000-10-14") & matchup == "Iowa Hawkeyes at James Madison Dukes"))  
     ) 
-case_two_gameoff_data <- left_join(a_offenses_per_ori, case_two_game_data, by = c("ori", "date"))
-# case_two_game_data (all offenses on days with games by ori by the away team): 4219
 
 case_three_home_game_data <- left_join(case_three_home, school_schedule, by = "ori_team") %>%
     filter(!(date == as.Date("2000-10-12") & matchup == "Idaho Vandals at West Virginia Mountaineers"))
 
-case_three_home_gameoff_data <- left_join(a_offenses_per_ori, case_three_home_game_data, by = c("ori", "date"))
-# case_three_home_game_data (all offenses on days with games by ori for the home team): 1658
-
 case_three_away_game_data <- left_join(case_three_away, school_schedule, by = "ori_team")
-case_three_away_gameoff_data <- left_join(a_offenses_per_ori, case_three_away_game_data, by = c("ori", "date"))
-# case_three_away_game_data (all offenses on days with games by ori by the away team): 1085
 # -------------------------------------------------------
 all_game_and_oris <- bind_rows(case_one_game_data, case_two_game_data, case_three_away_game_data, case_three_home_game_data)
 all_game_per_day <- left_join(a_offenses_per_ori, all_game_and_oris, by = c("ori", "date"))
@@ -140,6 +133,10 @@ names(total_offenses)
 total_offenses_use <- select(total_offenses, date, ori, ori_team, game_id, home_or_away, offense_type)
 
 ## Working on Replicate core analysis
+## Use this df
+all_game_per_day
+
+
 
 # Appendix Table One Descriptive Statistics
 # Maybe filter only games between (Aug 20 to Dec 10)
@@ -151,39 +148,15 @@ total_offenses_use <- select(total_offenses, date, ori, ori_team, game_id, home_
 games_ranged <- filter(total_games_use, (yday(date) >= 233 & yday(date) <= 345))
 offense_ranged <- filter(a_offenses_per_ori, (yday(date) >= 233 & yday(date) <= 345))
 
-group_by(total_offenses_use, ori, home_or_away, offense_type) %>%
-    summarise(count = n()) %>%
-    pivot_wider(names_from = offense_type, values_from = count)
-
-# total home games
-filter(games_ranged, home_or_away == "home")
-
-# total away games
-filter(games_ranged, home_or_away == "away")
-
 # Table Two - done (tentative)
 # Distribution of Game Days by Day of Week
 # For the large df of all games and all offenses
-# Total offenses on game days
-mutate(total_offenses_use, day_of_week = wday(date)) %>%
-    group_by(day_of_week) %>%
-    summarise(count = n())
-
-# Total offenses across all ranged days in all college areas
-mutate(offense_ranged, day_of_week = wday(date)) %>%
-    group_by(day_of_week) %>%
-    summarize(count = n())
-
 # Total games across all days
 mutate(total_games_use, day_of_week = wday(date)) %>%
     group_by(day_of_week) %>%
     summarise(count = n())
-
 # ______________________________________________________________________
 # ______________________________________________________________________
-
-
-
 
 
 # debugging
