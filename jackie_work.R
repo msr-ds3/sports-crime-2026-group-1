@@ -155,6 +155,9 @@ offense_ranged <- filter(a_offenses_per_ori, (yday(date) >= 233 & yday(date) <= 
 mutate(total_games_use, day_of_week = wday(date)) %>%
     group_by(day_of_week) %>%
     summarise(count = n())
+mutate(all_game_per_day, day_of_week = wday(date)) %>%
+    group_by(day_of_week) %>%
+    summarise(count = n())
 # ______________________________________________________________________
 # ______________________________________________________________________
 
