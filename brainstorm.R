@@ -63,3 +63,25 @@ group_by(city_name,date,home_game,away_game,game_type) %>% summarize ( offense_c
 offense_mean <- offense_count %>% group_by(game_type)%>% summarize(mean = mean(offense_counts))
 offense_mean
 
+
+#Total table
+
+y = 2000:2005
+
+date<- map_dfr(y, function(yr)(
+    data.frame(date = seq(as.Date(sprintf('%d-08-20',yr)),
+    as.Date(sprintf('%d-12-10',yr)),by ="day"))
+)
+)
+names(date)
+
+agency <- data.frame(
+ 
+    ori = c("AR0720100", "AR0160100", "CO0210100", "ID0010100", "ID0290500", "IA0850100", "IA0520200", "KS0230100", "MI8121800", "MI3336400", "MI3949900", "MI3759900", "OH0770100", "OH0050100", "OHCOP0000", "SC0390200", "SC0400100", "TN0750100", "TX2270100", "TX0610200", "TX1520000", "UT0030100", "UT0250600", "VA0600100", "WV0060200", "WV0310100")
+)
+agency
+table <- crossing(date,agency )
+table <- table %>%  mutate(weekday = weekdays(date))
+table
+table %>% left_join(total_offenses_use) %>%  group_by(offense_type,home_or_away) %>% summarize(count = n()) 
+table %>% left_join(total_offenses_use) %>% nrow
