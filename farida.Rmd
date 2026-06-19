@@ -1,0 +1,101 @@
+---
+title: " Replication of College Football Games and Crime (Rees & Schnepel, 2009)"
+author: "Jacqueline and Farida"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r load-packages}
+library(cfbfastR)
+library(tidyverse)
+library(readr)
+library(here)
+library(purrr)
+library(dplyr) 
+library(httpgd)
+
+theme_set(theme_bw())
+
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("ISLR2")
+library(ISLR2)
+install.packages("boot")
+library(boot)
+```
+
+``` {r}
+plot <- final_table %>% mutate(assault = ifelse(is.na(assault),0,assault ), 
+vandalism  = ifelse(is.na(vandalism),0,vandalism ), 
+home_or_away =  ifelse(is.na(home_or_away),"None",home_or_away ))
+
+plot
+
+```
+``` {r table-2}
+#distribution of games by day of the week
+# day of week, games , obersvations 
+dist_of_games <- plot %>% group_by(weekday ) %>% summarize(games = sum(home_or_away == "home")+sum(home_or_away == "away"),observations  = n())
+total <- tibble(weekday = "Total", games = sum(dist_of_games$games),observations = sum(dist_of_games$observations))
+dist_of_games <- bind_rows(dist_of_games,total)
+dist_of_games
+```
+
+``` {r descriptive-figures}
+#mean of number of offenses by home game away game or no game 
+mean <-plot %>% filter(weekday == "Saturday") %>%  group_by(home_or_away) %>% summarize(mean_assault = mean(assault), mean_vandalism =  mean(vandalism) , mean = mean(vandalism+assault), se = sd(vandalism+assault)/sqrt(n()))
+ggplot(mean, aes (x = home_or_away, y = mean )) +
+geom_errorbar(aes(ymin = mean - se,ymax = mean +se )) + geom_point()+
+xlab('') +
+ylab('Average Offenses')
+
+
+```
+
+```{r regression-table}
+#linear model of daily offenses counts on home games , away game indicators controlling for agency f
+#ixed effects, day of week, month, and year. 
+#reference
+ daily_crime <- plot %>% group_by(date,home_or_away) %>% summarize (offense = sum (assault+vandalism) ) %>% filter(date == "2000-09-30" ) 
+ 
+ regression_model <- plot %>% mutate(month =  month(date, label = TRUE, abbr = FALSE),
+                                    year =   as.numeric(format(plot$date,"%Y") ) ,
+                                    home = ifelse(home_or_away == "home",1,0),
+                                    away = ifelse(home_or_away == "away",1,0)
+ )
+assault <- lm( assault ~ home+away+factor(ori) + factor(weekday)+as.character(month)+factor(year),data = regression_model)
+summary(assault)
+vandalism <- lm( vandalism ~ home+away+factor(ori) + factor(weekday)+factor(as.character(month))+factor(year),data = regression_model)
+summary(vandalism)
+coef(assault)["home"]
+#outcome variable(dependent variable) = offenses , predictors = home_or_away 
+#9% increase 
+home_assault <- coef(assault)["home"] / mean(regression_model$assault)
+home_assault
+home_assault <- home_assault *100
+home_assault
+#not statistically sig
+home_vandalism <-  coef(vandalism)["home"] / mean(regression_model$vandalism)
+home_vandalism
+home_vandalism <- home_vandalism * 100
+home_vandalism
+#not statistically sig
+home_assault2 <- coef(assault)["away"] / mean(regression_model$assault)
+home_assault2
+home_assault2 <- home_assault2 *100
+home_assault2
+home_vandalism2 <-  coef(vandalism)["away"] / mean(regression_model$vandalism)
+home_vandalism2
+home_vandalism2 <- home_vandalism2 * 100
+home_vandalism2
+#away games show that it is there is no statsistical signifance and moreover no evidence to prove that there is a significance between offenses and away games 
+# negative values so no effect 
+regression_table1 <- broom::tidy(assault) %>% filter (term == "home" | term =="away") %>% mutate(percentage =  (coef(assault)[term] / mean(regression_model$assault)*100))%>% mutate (model  = "Assault")
+regression_table2 <- broom::tidy(vandalism)%>% filter (term == "home" | term =="away") %>% mutate(percentage = (coef(vandalism)[term] / mean(regression_model$vandalism)*100)) %>% mutate(model = "vandalism")
+
+
+regression_table <- bind_rows(regression_table1,regression_table2)
+regression_table %>% pivot_wider(names_from = model, values_from = c(estimate, std.error, percentage ))
+#possible cause of lower vandalism percenatge offense count maybe theirs is more , the paper uses negative =binomial coefficient while 
+# this replication analysis use a linear regression moreover they use a larger data seta and the paper uses a larger set of agencies 
+```
