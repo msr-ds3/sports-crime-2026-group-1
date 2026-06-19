@@ -48,7 +48,14 @@ ggplot(mean, aes (x = home_or_away, y = mean )) +
 geom_errorbar(aes(ymin = mean - se,ymax = mean +se )) + geom_point()+
 xlab('') +
 ylab('Average Offenses')
-
+mean
+# mean number per teams
+mean_per_team<- plot %>% left_join(all_game_and_oris) %>% filter(weekday == "Saturday") %>%  group_by(home_or_away,school_name) %>% summarize(mean_assault = mean(assault), mean_vandalism =  mean(vandalism) , mean = mean(vandalism+assault), se = sd(vandalism+assault)/sqrt(n()))
+ggplot(mean_per_team, aes (x = home_or_away, y = mean )) +
+geom_errorbar(aes(ymin = mean - se,ymax = mean +se )) + geom_point()+ facet_wrap(~ school_name,scales = "free_y")+
+#geom_errorbar(aes(ymin = mean - se,ymax = mean +se )) + geom_point()+ facet_wrap(~ school_name)+
+xlab('') +
+ylab('Average Offenses')
 
 ```
 
