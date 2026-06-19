@@ -1,0 +1,158 @@
+---
+title: " Replication of College Football Games and Crime (Rees & Schnepel, 2009)"
+author: "Jacqueline and Farida"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r load-packages}
+library(cfbfastR)
+library(tidyverse)
+library(readr)
+library(here)
+library(purrr)
+library(httpgd)
+
+theme_set(theme_bw())
+here()
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading all the data
+
+```{r}
+source(here("scripts/03_load_offense_data.R"))
+source(here("scripts/04_load_football_college.R"))
+```
+
+## Replicating core analysis
+
+This is a template that aims to replicate and analyze Daniel Rees and Kevin Schnepel's paper, College Football Games and Crime published in 2009 by Journal of Sports Economics. 
+This paper (https://jvlone.com/sportsdocs/footballGamesCrime2009.pdf) examines whether college football games lead to an increase in crime in host communities. This is done by using daily 
+offense data from 26 police agencies in college towns matched to game schedules to find the ---(finish later )
+
+### Descriptive statistics: Reproduce Appendix Table 1 from the paper: compute the mean, standard deviation, and quartiles of daily assault and vandalism counts across your sample of college town agencies. 
+
+#### All Games Descriptive Statistics Count
+```{r}
+final_table %>%
+    summarize(
+        mean = mean(assault), 
+        sd = sd(assault),
+        quartile_25 = quantile(assault, 0.25),
+        quartile_50 = quantile(assault, 0.5),
+        quartile_75 = quantile(assault, 0.75),
+        quartile_90 = quantile(assault, .90)
+    )
+
+final_table %>%
+    summarize(
+        mean = mean(vandalism), 
+        sd = sd(vandalism),
+        quartile_25 = quantile(vandalism, 0.25),
+        quartile_50 = quantile(vandalism, 0.5),
+        quartile_75 = quantile(vandalism, 0.75),
+        quartile_90 = quantile(vandalism, .90)
+    )
+```
+
+#### No Games Descriptive Statistics Count
+
+```{r}
+no_game_table <- filter(final_table, home_or_away == "none")
+no_game_table %>%
+    summarize(
+        mean = mean(assault), 
+        sd = sd(assault),
+        quartile_25 = quantile(assault, 0.25),
+        quartile_50 = quantile(assault, 0.5),
+        quartile_75 = quantile(assault, 0.75),
+        quartile_90 = quantile(assault, .90)
+    )
+
+no_game_table %>%
+    summarize(
+        mean = mean(vandalism), 
+        sd = sd(vandalism),
+        quartile_25 = quantile(vandalism, 0.25),
+        quartile_50 = quantile(vandalism, 0.5),
+        quartile_75 = quantile(vandalism, 0.75),
+        quartile_90 = quantile(vandalism, .90)
+    )
+```
+
+#### Home Games Descriptive Statistics Count
+
+```{r}
+home_game_table <- filter(final_table, home_or_away == "home")
+home_game_table %>%
+    summarize(
+        mean = mean(assault), 
+        sd = sd(assault),
+        quartile_25 = quantile(assault, 0.25),
+        quartile_50 = quantile(assault, 0.5),
+        quartile_75 = quantile(assault, 0.75),
+        quartile_90 = quantile(assault, .90)
+    )
+
+home_game_table %>%
+    summarize(
+        mean = mean(vandalism), 
+        sd = sd(vandalism),
+        quartile_25 = quantile(vandalism, 0.25),
+        quartile_50 = quantile(vandalism, 0.5),
+        quartile_75 = quantile(vandalism, 0.75),
+        quartile_90 = quantile(vandalism, .90)
+    )
+```
+
+#### Away Games Descriptive Statistics Count
+
+```{r}
+away_game_table <- filter(final_table, home_or_away == "away")
+away_game_table %>%
+    summarize(
+        mean = mean(assault), 
+        sd = sd(assault),
+        quartile_25 = quantile(assault, 0.25),
+        quartile_50 = quantile(assault, 0.5),
+        quartile_75 = quantile(assault, 0.75),
+        quartile_90 = quantile(assault, .90)
+    )
+
+away_game_table %>%
+    summarize(
+        mean = mean(vandalism), 
+        sd = sd(vandalism),
+        quartile_25 = quantile(vandalism, 0.25),
+        quartile_50 = quantile(vandalism, 0.5),
+        quartile_75 = quantile(vandalism, 0.75),
+        quartile_90 = quantile(vandalism, .90)
+    )
+```
+
+### Per-team plot: Show the same comparison separately for each college town / team instead of aggregated across all teams.
+Create figures showing the mean number of offenses on Saturdays (with standard errors), broken out by whether a home game, away game, or no game was played.
+
+```{r}
+ori_by_school <- tibble(
+    ori = c("AR0720100", "AR0160100", "CO0210100", "ID0010100", "ID0290500", "IA0850100", "IA0520200", "KS0230100", "MI8121800", "MI3336400", "MI3949900", "MI3759900", "OH0770100", "OH0050100", "OHCOP0000", "SC0390200", "SC0400100", "TN0750100", "TX2270100", "TX0610200", "TX1520000", "UT0030100", "UT0250600", "VA0600100", "WV0060200", "WV0310100"),
+    school_name = c("University of Arkansas", "Arkansas State University", "United States Air Force Academy", "
+    Boise State University", "The University of Idaho", "Iowa State University", "The University of Iowa", "The University of Kansas", "The University of Michigan", "Michigan State University", "Western Michigan University", "Eastern Michigan University", "The University of Akron", "Ohio University", 
+    "The Ohio State University", "Clemson University", "The University of South Carolina", "Middle Tennessee State University", "The University of Texas at Austin", "The University of North Texas", "Texas Tech University", "Utah State University", 
+    "Brigham Young University", "Virginia Polytechnic Institute and State University", "Marshall University", "West Virginia University")
+)
+
+final_table_saturdays_only <- filter(final_table, weekday == "Saturday")
+
+per_plot_team <- final_table_saturdays_only %>% 
+    mutate(offenses = assault + vandalism) %>% 
+    group_by(ori, home_or_away) %>% 
+    summarize(mean = mean(offenses), se = sd(offenses) / sqrt(n()), .groups = "drop") %>%
+    left_join(ori_by_school, by = "ori")
+
+ggplot(per_plot_team, mapping = aes(x = home_or_away, y = mean, ymin = mean - se, ymax = mean + se)) +
+    geom_pointrange() +
+    facet_wrap(~ school_name)
+```

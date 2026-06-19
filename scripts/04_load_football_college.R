@@ -2,7 +2,6 @@ install.packages("cfbfastR")
 library(tidyverse)
 library(cfbfastR)
 library(purrr)
-library(dplyr) 
 
 years <- 2000:2005
 schedules <- map_dfr(years, function(yr){
@@ -116,4 +115,9 @@ home_away <- select(all_game_and_oris, date, ori, home_or_away) %>%
 
 template_table <- table
 final_table <- left_join(template_table, vand_assa_count, by = c("ori", "date")) %>% 
-    left_join(home_away, by = c("ori", "date"))
+    left_join(home_away, by = c("ori", "date")) %>%
+    replace_na(list(
+        assault = 0,
+        vandalism = 0,
+        home_or_away = "none"
+    ))
