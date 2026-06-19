@@ -1,10 +1,11 @@
 library(tidyverse)
 library(readr)
+library(here)
 
 ## Create table joining city_name, school, state and ORI
-batch_data <- read_csv("ori_batch_header.csv",
-    col_names = c('ori','year','state','population','date_ori_was_added','date_ori_went_nibrs','city_name','state_abbreviation','population_group','country_division','country_region','agency_indicator','core_city'))
-batch_data <- select(batch_data, ori, year, state, population, city_name, agency_indicator)
+# batch_data <- read_csv("ori_batch_header.csv",
+#     col_names = c('ori','year','state','population','date_ori_was_added','date_ori_went_nibrs','city_name','state_abbreviation','population_group','country_division','country_region','agency_indicator','core_city'))
+# batch_data <- select(batch_data, ori, year, state, population, city_name, agency_indicator)
 
 # Tibble with the 26 schools' information
 school_info_tb <- tibble(
@@ -14,12 +15,8 @@ school_info_tb <- tibble(
     state = c("arkansas", "arkansas", "colorado", "idaho", "idaho", "iowa", "iowa", "kansas", "michigan", "michigan", "michigan", "michigan", "ohio", "ohio", "ohio", "south carolina", "south carolina", "tennessee", "texas", "texas", "texas", "utah", "utah", "virginia", "west virginia", "west virginia")
 )
 
-# ori_per_school <- inner_join(school_info_tb, batch_data, by = c("city_name", "state")) %>% 
-#     #filter(agency_indicator == "city") %>%
-#     select(city_name, school, state, ori, home_team_full) 
-
 ## Load Offense Data
-test_crime_data <- read_csv("nibrs_offense_segment_2000_2005.csv")
+test_crime_data <- read_csv(here("nibrs_offense_segment_2000_2005.csv"))
 # names(test_crime_data)
 grade_a_offenses <-filter(test_crime_data, 
     ucr_offense_code == "destruction/damage/vandalism of property" |
