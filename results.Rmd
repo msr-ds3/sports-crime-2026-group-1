@@ -29,8 +29,7 @@ source(here("scripts/04_load_football_college.R"))
 ## Replicating core analysis
 
 This is a template that aims to replicate and analyze Daniel Rees and Kevin Schnepel's paper, College Football Games and Crime published in 2009 by Journal of Sports Economics. 
-This paper (https://jvlone.com/sportsdocs/footballGamesCrime2009.pdf) examines whether college football games lead to an increase in crime in host communities. This is done by using daily 
-offense data from 26 police agencies in college towns matched to game schedules to find the ---(finish later )
+This paper (https://jvlone.com/sportsdocs/footballGamesCrime2009.pdf) examines whether college football games lead to an increase in crime in host communities. 
 
 ### Descriptive statistics: Reproduce Appendix Table 1 from the paper: compute the mean, standard deviation, and quartiles of daily assault and vandalism counts across your sample of college town agencies. 
 
@@ -132,6 +131,45 @@ away_game_table %>%
     )
 ```
 
+### Table 2 Reproduction
+
+``` {r}
+plot <- final_table %>% mutate(assault = ifelse(is.na(assault),0,assault), 
+vandalism  = ifelse(is.na(vandalism),0,vandalism ), 
+home_or_away =  ifelse(is.na(home_or_away),"None",home_or_away ))
+
+plot
+```
+``` {r table-2}
+#distribution of games by day of the week
+# day of week, games , obersvations 
+dist_of_games <- plot %>% group_by(weekday ) %>% summarize(games = sum(home_or_away == "home")+sum(home_or_away == "away"),observations  = n())
+total <- tibble(weekday = "Total", games = sum(dist_of_games$games),observations = sum(dist_of_games$observations))
+dist_of_games <- bind_rows(dist_of_games,total)
+dist_of_games
+```
+
+## Descriptive figures
+### Create figures showing the mean number of offenses on Saturdays, broken out by whether a home game, away game or no game was played. Start with assualts and vandalism.
+
+``` {r descriptive-figures}
+#mean of number of offenses by home game away game or no game 
+mean <-plot %>% filter(weekday == "Saturday") %>%  group_by(home_or_away) %>% summarize(mean_assault = mean(assault), mean_vandalism =  mean(vandalism) , mean = mean(vandalism+assault), se = sd(vandalism+assault)/sqrt(n()))
+ggplot(mean, aes (x = home_or_away, y = mean )) +
+geom_errorbar(aes(ymin = mean - se,ymax = mean +se )) + geom_point()+
+xlab('') +
+ylab('Average Offenses')
+mean
+# mean number per teams
+mean_per_team<- plot %>% left_join(all_game_and_oris) %>% filter(weekday == "Saturday") %>%  group_by(home_or_away,school_name) %>% summarize(mean_assault = mean(assault), mean_vandalism =  mean(vandalism) , mean = mean(vandalism+assault), se = sd(vandalism+assault)/sqrt(n()))
+ggplot(mean_per_team, aes (x = home_or_away, y = mean )) +
+geom_errorbar(aes(ymin = mean - se,ymax = mean +se )) + geom_point()+ facet_wrap(~ school_name,scales = "free_y")+
+#geom_errorbar(aes(ymin = mean - se,ymax = mean +se )) + geom_point()+ facet_wrap(~ school_name)+
+xlab('') +
+ylab('Average Offenses')
+
+```
+
 ### Per-team plot: Show the same comparison separately for each college town / team instead of aggregated across all teams.
 Create figures showing the mean number of offenses on Saturdays (with standard errors), broken out by whether a home game, away game, or no game was played.
 
@@ -155,4 +193,53 @@ per_plot_team <- final_table_saturdays_only %>%
 ggplot(per_plot_team, mapping = aes(x = home_or_away, y = mean, ymin = mean - se, ymax = mean + se)) +
     geom_pointrange() +
     facet_wrap(~ school_name)
+```
+
+## Regression (Table Three)
+```{r regression-table}
+#linear model of daily offenses counts on home games , away game indicators controlling for agency f
+#ixed effects, day of week, month, and year. 
+#reference
+ daily_crime <- plot %>% group_by(date,home_or_away) %>% summarize (offense = sum (assault+vandalism) ) %>% filter(date == "2000-09-30" ) 
+ 
+ regression_model <- plot %>% mutate(month =  month(date, label = TRUE, abbr = FALSE),
+                                    year =   as.numeric(format(plot$date,"%Y") ) ,
+                                    home = ifelse(home_or_away == "home",1,0),
+                                    away = ifelse(home_or_away == "away",1,0)
+ )
+assault <- lm( assault ~ home+away+factor(ori) + factor(weekday)+as.character(month)+factor(year),data = regression_model)
+summary(assault)
+vandalism <- lm( vandalism ~ home+away+factor(ori) + factor(weekday)+factor(as.character(month))+factor(year),data = regression_model)
+summary(vandalism)
+coef(assault)["home"]
+#outcome variable(dependent variable) = offenses , predictors = home_or_away 
+#9% increase 
+home_assault <- coef(assault)["home"] / mean(regression_model$assault)
+home_assault
+home_assault <- home_assault *100
+home_assault
+#not statistically sig
+home_vandalism <-  coef(vandalism)["home"] / mean(regression_model$vandalism)
+home_vandalism
+home_vandalism <- home_vandalism * 100
+home_vandalism
+#not statistically sig
+home_assault2 <- coef(assault)["away"] / mean(regression_model$assault)
+home_assault2
+home_assault2 <- home_assault2 *100
+home_assault2
+home_vandalism2 <-  coef(vandalism)["away"] / mean(regression_model$vandalism)
+home_vandalism2
+home_vandalism2 <- home_vandalism2 * 100
+home_vandalism2
+#away games show that it is there is no statsistical signifance and moreover no evidence to prove that there is a significance between offenses and away games 
+# negative values so no effect 
+regression_table1 <- broom::tidy(assault) %>% filter (term == "home" | term =="away") %>% mutate(percentage =  (coef(assault)[term] / mean(regression_model$assault)*100))%>% mutate (model  = "Assault")
+regression_table2 <- broom::tidy(vandalism)%>% filter (term == "home" | term =="away") %>% mutate(percentage = (coef(vandalism)[term] / mean(regression_model$vandalism)*100)) %>% mutate(model = "vandalism")
+
+
+regression_table <- bind_rows(regression_table1,regression_table2)
+regression_table %>% pivot_wider(names_from = model, values_from = c(estimate, std.error, percentage ))
+#possible cause of lower vandalism percenatge offense count maybe theirs is more , the paper uses negative =binomial coefficient while 
+# this replication analysis use a linear regression moreover they use a larger data seta and the paper uses a larger set of agencies 
 ```

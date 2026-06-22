@@ -30,7 +30,6 @@ vandalism  = ifelse(is.na(vandalism),0,vandalism ),
 home_or_away =  ifelse(is.na(home_or_away),"None",home_or_away ))
 
 plot
-
 ```
 ``` {r table-2}
 #distribution of games by day of the week
